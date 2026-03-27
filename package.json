@@ -1,0 +1,14 @@
+{
+  "name": "newsroom-disparity-finder",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Prototype internal tool for surfacing disparity-based story leads from structured public datasets.",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,13 @@
+neighborhood,borough,income_band,race_majority,service_requests,avg_response_days,inspections_completed_pct,unresolved_90d_pct
+Harbor Point,North,High,White,184,4.2,92,9
+Maple Heights,North,High,White,171,4.7,90,11
+Civic Center,Central,High,Asian,165,5.1,88,12
+Riverside,Central,Middle,Asian,193,6.4,84,17
+Elm Square,Central,Middle,Latino,208,6.8,82,19
+West Junction,North,Middle,Latino,199,7.2,80,22
+South Terrace,South,Low,Black,244,10.8,68,34
+Garden Flats,South,Low,Black,231,11.2,66,37
+East Market,South,Low,Latino,226,9.9,70,31
+Pine Hollow,Central,Low,Black,217,9.4,72,29
+Union Blocks,South,Middle,Black,205,8.5,75,26
+Lakeview,North,Middle,Asian,188,6.1,85,16

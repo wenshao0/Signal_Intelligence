@@ -1,0 +1,846 @@
+:root {
+  --bg: #f6f0e5;
+  --panel: rgba(255, 252, 247, 0.88);
+  --panel-strong: #fffaf2;
+  --text: #1f2430;
+  --muted: #5c6472;
+  --accent: #a83f2f;
+  --accent-soft: #edd0bc;
+  --line: rgba(31, 36, 48, 0.12);
+  --shadow: 0 20px 60px rgba(53, 35, 13, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(168, 63, 47, 0.12), transparent 30%),
+    radial-gradient(circle at top right, rgba(199, 154, 70, 0.18), transparent 26%),
+    linear-gradient(180deg, #fbf7ef 0%, var(--bg) 100%);
+  min-height: 100vh;
+}
+
+.shell {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+
+.hero {
+  padding: 2rem 0 1rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+dt {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(2.6rem, 5vw, 4.8rem);
+  line-height: 0.95;
+  max-width: 10ch;
+}
+
+h2 {
+  font-size: 1.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.intro,
+.muted,
+dd,
+li,
+td,
+th,
+button,
+input {
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+}
+
+.intro {
+  max-width: 62ch;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+}
+
+.controls {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.5rem;
+}
+
+.mode-switch {
+  display: inline-flex;
+  gap: 0.5rem;
+  padding: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.mode-button {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.7rem 1rem;
+  font-size: 0.96rem;
+  cursor: pointer;
+}
+
+.mode-button-active {
+  background: var(--accent);
+  color: white;
+}
+
+.mode-panel {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.upload-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field span {
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.field input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-strong);
+  font-size: 0.98rem;
+}
+
+.field textarea {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-strong);
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: var(--text);
+  resize: vertical;
+}
+
+.two-up {
+  display: grid;
+  gap: 1rem;
+}
+
+.supporting-table-panel {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.file-input {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px dashed var(--line);
+  border-radius: 18px;
+  background: var(--panel-strong);
+}
+
+.file-input input {
+  max-width: 100%;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.button {
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  padding: 0.85rem 1.2rem;
+  font-size: 0.98rem;
+  cursor: pointer;
+}
+
+.button-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.button-disabled,
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.source-note {
+  margin: 0;
+}
+
+.limits {
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.limits ul {
+  margin: 0.65rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+}
+
+.status {
+  margin: 1rem 0;
+  padding: 0.95rem 1.1rem;
+  border-radius: 14px;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  border: 1px solid transparent;
+}
+
+.status.loading {
+  background: rgba(237, 208, 188, 0.45);
+  border-color: rgba(168, 63, 47, 0.12);
+}
+
+.status.success {
+  background: rgba(122, 148, 108, 0.14);
+  border-color: rgba(122, 148, 108, 0.28);
+}
+
+.status.error {
+  background: rgba(168, 63, 47, 0.12);
+  border-color: rgba(168, 63, 47, 0.2);
+}
+
+.summary,
+.comparison,
+.datasets,
+.debug-response {
+  margin-top: 1rem;
+  padding: 1.4rem;
+}
+
+.developer-panel {
+  margin-top: 1rem;
+  padding: 1.1rem 1.4rem 1.4rem;
+}
+
+.developer-panel summary {
+  cursor: pointer;
+  list-style: none;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.developer-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.developer-panel summary::before {
+  content: "+ ";
+  color: var(--accent);
+}
+
+.developer-panel[open] summary::before {
+  content: "- ";
+}
+
+.developer-body {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.95rem;
+}
+
+.developer-section {
+  padding-top: 0.95rem;
+  border-top: 1px solid var(--line);
+}
+
+.developer-section:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.summary-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.support-panel {
+  border-top: 1px solid var(--line);
+  padding-top: 0.95rem;
+}
+
+.support-panel + .support-panel {
+  margin-top: 0.75rem;
+}
+
+.support-panel summary {
+  cursor: pointer;
+  list-style: none;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.96rem;
+  color: var(--text);
+}
+
+.support-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.support-panel summary::before {
+  content: "+ ";
+  color: var(--accent);
+}
+
+.support-panel[open] summary::before {
+  content: "- ";
+}
+
+.support-body {
+  margin-top: 0.9rem;
+}
+
+.source-summary {
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.source-summary p {
+  margin: 0.3rem 0;
+}
+
+.planner-block {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.guidance-list {
+  margin: 0.35rem 0 0.8rem;
+  padding-left: 1.1rem;
+  color: var(--muted);
+}
+
+.guidance-list li {
+  margin-bottom: 0.35rem;
+}
+
+.method-note {
+  margin: 1rem 0 0;
+  color: var(--muted);
+}
+
+.comparison-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.dataset-warnings {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  background: rgba(237, 208, 188, 0.32);
+}
+
+.dataset-warnings ul {
+  margin: 0.55rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+}
+
+.dataset-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.dataset-card {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--panel-strong);
+}
+
+.dataset-topline,
+.dataset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.dataset-source,
+.dataset-format {
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.88rem;
+  color: var(--accent);
+}
+
+.dataset-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.88rem;
+}
+
+.dataset-reliability,
+.dataset-freshness {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(168, 63, 47, 0.08);
+}
+
+.dataset-usability {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(31, 36, 48, 0.06);
+}
+
+.badge-good {
+  background: rgba(122, 148, 108, 0.18);
+}
+
+.badge-caution {
+  background: rgba(199, 154, 70, 0.22);
+}
+
+.badge-bad {
+  background: rgba(168, 63, 47, 0.16);
+}
+
+.dataset-details {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.dataset-actions {
+  justify-content: flex-start;
+}
+
+.dataset-link {
+  text-decoration: none;
+}
+
+.debug-panel {
+  margin-top: 0.15rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+}
+
+.debug-panel summary {
+  cursor: pointer;
+  list-style: none;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.debug-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.debug-panel summary::before {
+  content: "+ ";
+  color: var(--accent);
+}
+
+.debug-panel[open] summary::before {
+  content: "- ";
+}
+
+.debug-content {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+}
+
+.debug-meta {
+  margin: 0;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.debug-fields {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+}
+
+.debug-json {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(31, 36, 48, 0.04);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.85rem 0.65rem;
+  border-top: 1px solid var(--line);
+}
+
+thead th {
+  border-top: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.leads {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.leads-header {
+  padding: 1.2rem 1.35rem;
+}
+
+.lead-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.lead-card {
+  padding: 1.2rem;
+}
+
+.hypothesis-card {
+  border-width: 1px;
+}
+
+.lead-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.9rem;
+  color: var(--accent);
+}
+
+.triage-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.88rem;
+  background: rgba(31, 36, 48, 0.06);
+}
+
+.triage-rationale {
+  margin: 0.35rem 0 0.7rem;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.96rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.hypothesis-statement {
+  margin: 0 0 0.65rem;
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.hypothesis {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.explanation-card .lead-priority-summary {
+  max-width: 100%;
+}
+
+.lead-scan {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0.9rem 0 0.85rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.lead-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-bottom: 0.9rem;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.88rem;
+}
+
+.lead-worth,
+.lead-effect,
+.score,
+.lead-priority-summary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(31, 36, 48, 0.06);
+}
+
+.triage-good {
+  background: rgba(122, 148, 108, 0.18);
+}
+
+.triage-caution {
+  background: rgba(199, 154, 70, 0.22);
+}
+
+.triage-bad {
+  background: rgba(168, 63, 47, 0.16);
+}
+
+.lead-expand {
+  border-top: 1px solid var(--line);
+  padding-top: 0.95rem;
+}
+
+.lead-expand summary {
+  cursor: pointer;
+  list-style: none;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.lead-expand summary::-webkit-details-marker {
+  display: none;
+}
+
+.lead-expand summary::before {
+  content: "+ ";
+  color: var(--accent);
+}
+
+.lead-expand[open] summary::before {
+  content: "- ";
+}
+
+.lead-expanded {
+  margin-top: 1rem;
+}
+
+.hypothesis-bundle {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(199, 154, 70, 0.08);
+}
+
+.evidence-chain {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(168, 63, 47, 0.05);
+}
+
+.evidence-block {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.evidence-block h4 {
+  font-size: 1rem;
+}
+
+.lead-baseline-summary {
+  margin: 0;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  line-height: 1.55;
+}
+
+.secondary-source-card {
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.secondary-source-card + .secondary-source-card {
+  margin-top: 0.65rem;
+}
+
+.secondary-source-card h5 {
+  margin-bottom: 0.45rem;
+  font-size: 0.98rem;
+}
+
+.secondary-source-card p {
+  margin: 0.28rem 0;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.lead-execution {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(31, 36, 48, 0.03);
+}
+
+.lead-execution-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.lead-execution-topline p {
+  margin: 0.2rem 0 0;
+}
+
+.evidence-result-card {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.evidence-result-card p {
+  margin: 0.3rem 0;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  line-height: 1.55;
+}
+
+.inline-guidance p {
+  margin: 0.55rem 0 0.2rem;
+}
+
+.lead-details {
+  display: grid;
+  gap: 0.9rem;
+}
+
+dt {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+dd {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.hidden {
+  display: none;
+}
+
+@media (min-width: 760px) {
+  .controls {
+    grid-template-columns: 1.2fr 1fr;
+    align-items: start;
+  }
+
+  .two-up {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dataset-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lead-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .lead-execution-topline {
+    align-items: flex-start;
+  }
+}

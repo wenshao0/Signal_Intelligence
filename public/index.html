@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signal Desk</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Version 1.2 prototype</p>
+        <h1>Signal Desk</h1>
+        <p class="intro">
+          Start from a business event or question, then use page context and optional structured
+          tables to build a small number of explanation paths. Structured data is supporting
+          evidence here, not the default source of meaning.
+        </p>
+      </section>
+
+      <section class="panel controls">
+        <div>
+          <h2>Run analysis</h2>
+          <p class="muted">
+            The tool turns a concrete event or question into a small number of possible business
+            explanations, then shows what evidence supports them, what weakens them, and what still
+            needs verification.
+          </p>
+        </div>
+
+        <div class="mode-switch" role="tablist" aria-label="Analysis modes">
+          <button id="mode-explain" type="button" class="mode-button mode-button-active">
+            Explain question/event
+          </button>
+          <button id="mode-upload" type="button" class="mode-button">
+            Upload CSV
+          </button>
+          <button id="mode-discover" type="button" class="mode-button">
+            Find public datasets
+          </button>
+        </div>
+
+        <section id="panel-explain" class="mode-panel">
+          <form id="explain-form" class="upload-form">
+            <label class="field">
+              <span>Question or event</span>
+              <textarea
+                id="explain-question"
+                rows="3"
+                placeholder="Why did the market react so strongly to this partnership announcement?"
+              ></textarea>
+            </label>
+            <div class="two-up">
+              <label class="field">
+                <span>Page title (optional)</span>
+                <input id="explain-title" type="text" placeholder="Company rises after partnership announcement" />
+              </label>
+              <label class="field">
+                <span>Page URL (optional)</span>
+                <input id="explain-url" type="url" placeholder="https://example.com/article" />
+              </label>
+            </div>
+            <label class="field">
+              <span>Selected passage (optional)</span>
+              <textarea
+                id="explain-selection"
+                rows="3"
+                placeholder="Paste the most important paragraph or highlighted passage."
+              ></textarea>
+            </label>
+            <label class="field">
+              <span>Article or page text (optional but helpful)</span>
+              <textarea
+                id="explain-article"
+                rows="6"
+                placeholder="Paste the article body, filing excerpt, or page text you want to understand."
+              ></textarea>
+            </label>
+            <div class="supporting-table-panel">
+              <div>
+                <p class="eyebrow">Optional structured evidence</p>
+                <p class="muted">
+                  Add one business-style table if the page includes peer comparisons, quarterly
+                  metrics, or expectation-vs-actual data.
+                </p>
+              </div>
+              <label class="field">
+                <span>Supporting table title</span>
+                <input id="explain-table-title" type="text" placeholder="Peer comparison table" />
+              </label>
+              <label class="field">
+                <span>Supporting table as CSV</span>
+                <textarea
+                  id="explain-table-csv"
+                  rows="6"
+                  placeholder="ticker,ytd_return,expected_return,operating_margin&#10;FORM,34,8,27&#10;PEER1,12,15,18"
+                ></textarea>
+              </label>
+            </div>
+            <div class="actions">
+              <button type="submit" class="button">Build explanation</button>
+              <button id="explain-sample-button" type="button" class="button button-secondary">
+                Use sample context
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section id="panel-upload" class="mode-panel hidden">
+          <form id="upload-form" class="upload-form">
+            <label class="file-input">
+              <span>Choose CSV</span>
+              <input id="csv-file" type="file" accept=".csv,text/csv" />
+            </label>
+            <div class="actions">
+              <button type="submit" class="button">Analyze upload</button>
+              <button id="sample-button" type="button" class="button button-secondary">
+                Use sample dataset
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section id="panel-discover" class="mode-panel hidden">
+          <form id="discover-form" class="upload-form">
+            <label class="field">
+              <span>Topic</span>
+              <input id="topic-input" type="text" placeholder="Housing inspections, evictions, traffic stops" />
+            </label>
+            <label class="field">
+              <span>Location (optional)</span>
+              <input id="location-input" type="text" placeholder="Chicago, New York City, California" />
+            </label>
+            <div class="actions">
+              <button type="submit" class="button">Find datasets</button>
+            </div>
+          </form>
+          <p class="muted source-note">
+            Searches a small supported set of public catalogs: data.gov, NYC Open Data, and the
+            Chicago Data Portal.
+          </p>
+        </section>
+
+        <div class="limits">
+          <strong>Guardrails</strong>
+          <ul>
+            <li>Start from a real question or event whenever possible</li>
+            <li>Structured business tables are supporting evidence, not the default driver</li>
+            <li>Outputs are explanation paths for reporting, not conclusions</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="status" class="status" aria-live="polite"></section>
+
+      <section id="hypotheses" class="leads hidden"></section>
+
+      <section id="datasets" class="panel datasets hidden"></section>
+
+      <section id="summary" class="panel summary hidden"></section>
+
+      <section id="comparison" class="panel comparison hidden"></section>
+
+      <details id="developer-panel" class="panel developer-panel hidden">
+        <summary>Developer debug</summary>
+        <div id="developer-debug" class="developer-body"></div>
+      </details>
+    </main>
+
+    <template id="hypothesis-template">
+      <article class="panel lead-card hypothesis-card">
+        <div class="lead-topline">
+          <span class="rank"></span>
+          <span class="triage-label"></span>
+        </div>
+        <h3 class="headline"></h3>
+        <p class="triage-rationale"></p>
+        <p class="hypothesis-statement"></p>
+        <p class="importance"></p>
+        <div class="lead-scan">
+          <div>
+            <dt>Current evidence summary</dt>
+            <dd class="hypothesis-evidence-summary"></dd>
+          </div>
+          <div>
+            <dt>What strengthens it</dt>
+            <dd class="hypothesis-supporting-summary"></dd>
+          </div>
+          <div>
+            <dt>What weakens or complicates it</dt>
+            <dd class="hypothesis-conflicting-summary"></dd>
+          </div>
+          <div>
+            <dt>Original signal</dt>
+            <dd class="pattern"></dd>
+          </div>
+          <div>
+            <dt>One-line caution</dt>
+            <dd class="lead-caution-inline"></dd>
+          </div>
+        </div>
+        <div class="lead-meta-row">
+          <span class="score"></span>
+          <span class="lead-priority-summary"></span>
+          <span class="lead-effect"></span>
+        </div>
+        <div class="lead-execution-topline">
+          <div>
+            <p class="eyebrow">Cross-dataset execution</p>
+            <p class="muted">Run a first-pass evidence check when an explicit join key is available.</p>
+          </div>
+          <button type="button" class="button button-secondary lead-evidence-run">
+            Run evidence check
+          </button>
+        </div>
+        <details class="lead-expand">
+          <summary>Full hypothesis dossier</summary>
+          <div class="lead-expanded">
+            <section class="hypothesis-bundle">
+              <div class="evidence-block">
+                <p class="eyebrow">Evidence bundle</p>
+                <h4>Datasets contributing evidence</h4>
+                <dd class="hypothesis-datasets"></dd>
+              </div>
+              <div class="evidence-block">
+                <h4>What still needs verification</h4>
+                <dd class="hypothesis-verification"></dd>
+              </div>
+              <div class="evidence-block">
+                <h4>What cannot yet be concluded</h4>
+                <dd class="hypothesis-conclusions"></dd>
+              </div>
+            </section>
+            <section class="lead-execution">
+              <div class="lead-evidence-result"></div>
+            </section>
+            <section class="evidence-chain">
+              <div class="evidence-block">
+                <p class="eyebrow">What to verify next</p>
+                <h4>Baseline or denominator still missing</h4>
+                <p class="lead-baseline-summary"></p>
+                <p class="muted lead-baseline-why"></p>
+                <dd class="lead-baseline-types"></dd>
+              </div>
+              <div class="evidence-block">
+                <h4>Secondary public data to validate or challenge it</h4>
+                <div class="lead-secondary-sources"></div>
+              </div>
+              <div class="evidence-block">
+                <h4>What cannot yet be claimed</h4>
+                <dd class="lead-claim-limits"></dd>
+              </div>
+            </section>
+            <dl class="lead-details">
+              <div>
+                <dt>Tentative hypothesis</dt>
+                <dd class="hypothesis"></dd>
+              </div>
+              <div>
+                <dt>Weaknesses / alternatives</dt>
+                <dd class="weaknesses"></dd>
+              </div>
+              <div>
+                <dt>What more data is needed</dt>
+                <dd class="more-data"></dd>
+              </div>
+              <div>
+                <dt>Who a reporter should interview</dt>
+                <dd class="interviews"></dd>
+              </div>
+              <div>
+                <dt>Follow-up data to check next</dt>
+                <dd class="lead-follow-up-data"></dd>
+              </div>
+              <div>
+                <dt>Missing fields / comparisons to look for</dt>
+                <dd class="lead-missing"></dd>
+              </div>
+              <div>
+                <dt>Reporting next steps</dt>
+                <dd class="lead-reporting"></dd>
+              </div>
+              <div>
+                <dt>Validation cautions before trusting it</dt>
+                <dd class="lead-cautions"></dd>
+              </div>
+            </dl>
+          </div>
+        </details>
+      </article>
+    </template>
+
+    <template id="explanation-template">
+      <article class="panel lead-card hypothesis-card explanation-card">
+        <div class="lead-topline">
+          <span class="rank"></span>
+          <span class="triage-label"></span>
+        </div>
+        <h3 class="headline"></h3>
+        <p class="triage-rationale"></p>
+        <p class="hypothesis-statement"></p>
+        <p class="importance"></p>
+        <div class="lead-scan">
+          <div>
+            <dt>What happened</dt>
+            <dd class="explanation-anchor"></dd>
+          </div>
+          <div>
+            <dt>What may explain it</dt>
+            <dd class="explanation-supporting-summary"></dd>
+          </div>
+          <div>
+            <dt>What weakens it</dt>
+            <dd class="explanation-conflicting-summary"></dd>
+          </div>
+          <div>
+            <dt>One-line caution</dt>
+            <dd class="lead-caution-inline"></dd>
+          </div>
+          <div>
+            <dt>What still needs verification</dt>
+            <dd class="explanation-verification-inline"></dd>
+          </div>
+        </div>
+        <div class="lead-meta-row">
+          <span class="score explanation-family"></span>
+          <span class="lead-priority-summary"></span>
+        </div>
+        <details class="lead-expand">
+          <summary>Full explanation path</summary>
+          <div class="lead-expanded">
+            <section class="hypothesis-bundle">
+              <div class="evidence-block">
+                <p class="eyebrow">Anchor question</p>
+                <h4 class="explanation-question"></h4>
+              </div>
+              <div class="evidence-block">
+                <h4>Timeline notes</h4>
+                <dd class="explanation-timeline"></dd>
+              </div>
+              <div class="evidence-block">
+                <h4>Tensions worth explaining</h4>
+                <dd class="explanation-tensions"></dd>
+              </div>
+            </section>
+            <section class="evidence-chain">
+              <div class="evidence-block">
+                <p class="eyebrow">Mechanism</p>
+                <h4>Step-by-step causal chain</h4>
+                <dd class="explanation-causal-chain"></dd>
+              </div>
+              <div class="evidence-block">
+                <h4>Supporting evidence</h4>
+                <dd class="explanation-supporting-evidence"></dd>
+              </div>
+              <div class="evidence-block">
+                <h4>Counterevidence or gaps</h4>
+                <dd class="explanation-counter-evidence"></dd>
+              </div>
+              <div class="evidence-block">
+                <h4>What to check next</h4>
+                <dd class="explanation-next-checks"></dd>
+              </div>
+            </section>
+            <dl class="lead-details">
+              <div>
+                <dt>Supporting structured evidence</dt>
+                <dd class="explanation-supporting-tables"></dd>
+              </div>
+            </dl>
+          </div>
+        </details>
+      </article>
+    </template>
+
+    <template id="discovery-hypothesis-template">
+      <article class="panel lead-card hypothesis-card discovery-hypothesis-card">
+        <div class="lead-topline">
+          <span class="rank"></span>
+          <span class="triage-label"></span>
+        </div>
+        <h3 class="headline"></h3>
+        <p class="triage-rationale"></p>
+        <p class="hypothesis-statement"></p>
+        <p class="importance"></p>
+        <div class="lead-scan">
+          <div>
+            <dt>Current evidence summary</dt>
+            <dd class="hypothesis-evidence-summary"></dd>
+          </div>
+          <div>
+            <dt>Contributing datasets</dt>
+            <dd class="hypothesis-dataset-summary"></dd>
+          </div>
+          <div>
+            <dt>What strengthens it</dt>
+            <dd class="hypothesis-supporting-summary"></dd>
+          </div>
+          <div>
+            <dt>What weakens or complicates it</dt>
+            <dd class="hypothesis-conflicting-summary"></dd>
+          </div>
+          <div>
+            <dt>What still needs verification</dt>
+            <dd class="hypothesis-verification-inline"></dd>
+          </div>
+          <div>
+            <dt>One-line caution</dt>
+            <dd class="lead-caution-inline"></dd>
+          </div>
+        </div>
+        <div class="lead-meta-row">
+          <span class="score"></span>
+          <span class="lead-priority-summary"></span>
+        </div>
+        <div class="dataset-actions">
+          <a class="dataset-link button button-secondary hypothesis-source-link" target="_blank" rel="noreferrer">Source page</a>
+          <button type="button" class="button hypothesis-run">Analyze full dataset</button>
+        </div>
+        <details class="lead-expand">
+          <summary>Supporting dataset and method details</summary>
+          <div class="lead-expanded">
+            <section class="hypothesis-bundle">
+              <div class="evidence-block">
+                <p class="eyebrow">Evidence bundle</p>
+                <h4>Datasets contributing evidence</h4>
+                <dd class="hypothesis-datasets"></dd>
+              </div>
+              <div class="evidence-block">
+                <h4>What cannot yet be concluded</h4>
+                <dd class="hypothesis-conclusions"></dd>
+              </div>
+            </section>
+            <dl class="lead-details">
+              <div>
+                <dt>Original signal</dt>
+                <dd class="pattern"></dd>
+              </div>
+              <div>
+                <dt>Source credibility</dt>
+                <dd class="dataset-credibility"></dd>
+              </div>
+              <div>
+                <dt>Data usability</dt>
+                <dd class="dataset-usability-detail"></dd>
+              </div>
+              <div>
+                <dt>Quality signals</dt>
+                <dd class="dataset-quality"></dd>
+              </div>
+              <div>
+                <dt>Limitations</dt>
+                <dd class="dataset-limitations"></dd>
+              </div>
+            </dl>
+          </div>
+        </details>
+      </article>
+    </template>
+
+    <template id="dataset-template">
+      <article class="dataset-card">
+        <div class="dataset-topline">
+          <span class="dataset-source"></span>
+          <span class="dataset-format"></span>
+        </div>
+        <h3 class="dataset-title"></h3>
+        <p class="dataset-publisher muted"></p>
+        <div class="dataset-meta">
+          <span class="dataset-reliability"></span>
+          <span class="dataset-usability"></span>
+          <span class="dataset-freshness"></span>
+        </div>
+        <p class="dataset-description muted"></p>
+        <dl class="dataset-details">
+          <div>
+            <dt>Source Credibility</dt>
+            <dd class="dataset-credibility"></dd>
+          </div>
+          <div>
+            <dt>Data Usability</dt>
+            <dd class="dataset-usability-detail"></dd>
+          </div>
+          <div>
+            <dt>Quality signals</dt>
+            <dd class="dataset-quality"></dd>
+          </div>
+          <div>
+            <dt>Limitations</dt>
+            <dd class="dataset-limitations"></dd>
+          </div>
+          <div>
+            <dt>Follow-up data to check next</dt>
+            <dd class="dataset-follow-up-data"></dd>
+          </div>
+          <div>
+            <dt>Missing fields / comparisons to look for</dt>
+            <dd class="dataset-missing"></dd>
+          </div>
+          <div>
+            <dt>Reporting next steps</dt>
+            <dd class="dataset-reporting"></dd>
+          </div>
+          <div>
+            <dt>Validation cautions before trusting it</dt>
+            <dd class="dataset-cautions"></dd>
+          </div>
+        </dl>
+        <div class="dataset-actions">
+          <a class="dataset-link button button-secondary" target="_blank" rel="noreferrer">Source page</a>
+          <button type="button" class="button dataset-run">Analyze dataset</button>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
