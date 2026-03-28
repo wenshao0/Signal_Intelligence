@@ -17,6 +17,7 @@ const discoveryHypothesisTemplate = document.querySelector("#discovery-hypothesi
 const datasetTemplate = document.querySelector("#dataset-template");
 const topicInput = document.querySelector("#topic-input");
 const locationInput = document.querySelector("#location-input");
+const explainTrackInput = document.querySelector("#explain-track");
 const explainQuestionInput = document.querySelector("#explain-question");
 const explainTitleInput = document.querySelector("#explain-title");
 const explainUrlInput = document.querySelector("#explain-url");
@@ -41,6 +42,7 @@ let leadEvidenceResults = new Map();
 let lastAnalysisContext = null;
 let developerDebugState = {
   explain: null,
+  research: null,
   upload: null,
   search: null,
   hypothesis: null
@@ -57,17 +59,29 @@ explainForm.addEventListener("submit", async (event) => {
 
 explainSampleButton.addEventListener("click", async () => {
   renderStatus("Loading sample explanation context...", "loading");
-  const response = await fetch("/sample-data");
-  const csvText = await response.text();
-  explainQuestionInput.value = "Why might the market react so strongly to this partnership announcement?";
-  explainTitleInput.value = "FormFactor shares rise after partnership announcement";
-  explainUrlInput.value = "https://example.com/formfactor-partnership";
-  explainSelectionInput.value =
-    "FormFactor shares jumped after the company announced a new partnership, even though many analysts had been treating the stock as a lower-return name.";
-  explainArticleInput.value =
-    "FormFactor shares rose after the company announced a partnership aimed at tighter integration in RF testing. The company did not disclose an immediate revenue impact, but the market reaction suggested investors may be reading the move as strategically important. Analysts had previously framed the stock as a lower-return name relative to peers, raising the question of whether the market is updating expectations faster than published estimates.";
-  explainTableTitleInput.value = "Peer comparison table";
-  explainTableCsvInput.value = csvText;
+  if (explainTrackInput.value === "research") {
+    explainQuestionInput.value = "What research is most relevant to understanding why social rejection can feel physically painful?";
+    explainTitleInput.value = "Why social rejection can feel physically painful";
+    explainUrlInput.value = "https://example.com/social-rejection-pain";
+    explainSelectionInput.value =
+      "Some people describe social rejection as feeling physically painful, but it is hard to know whether that is just a metaphor or something research actually supports.";
+    explainArticleInput.value =
+      "A growing number of articles claim that social rejection can feel physically painful. The question is whether neuroscience and psychology research actually supports that overlap, or whether the phrase is mostly metaphorical. A useful research check would look for studies on social pain, neural overlap, and emotional distress rather than relying on surface explanations alone.";
+    explainTableTitleInput.value = "";
+    explainTableCsvInput.value = "";
+  } else {
+    const response = await fetch("/sample-data");
+    const csvText = await response.text();
+    explainQuestionInput.value = "Why might the market react so strongly to this partnership announcement?";
+    explainTitleInput.value = "FormFactor shares rise after partnership announcement";
+    explainUrlInput.value = "https://example.com/formfactor-partnership";
+    explainSelectionInput.value =
+      "FormFactor shares jumped after the company announced a new partnership, even though many analysts had been treating the stock as a lower-return name.";
+    explainArticleInput.value =
+      "FormFactor shares rose after the company announced a partnership aimed at tighter integration in RF testing. The company did not disclose an immediate revenue impact, but the market reaction suggested investors may be reading the move as strategically important. Analysts had previously framed the stock as a lower-return name relative to peers, raising the question of whether the market is updating expectations faster than published estimates.";
+    explainTableTitleInput.value = "Peer comparison table";
+    explainTableCsvInput.value = csvText;
+  }
   setMode("explain");
   renderStatus("Sample explanation context loaded.", "success");
 });
@@ -208,6 +222,7 @@ leadsEl.addEventListener("click", async (event) => {
 let lastRenderedLeads = [];
 
 async function runExplanation() {
+  const track = explainTrackInput.value;
   const question = explainQuestionInput.value.trim();
   const page = {
     url: explainUrlInput.value.trim(),
@@ -225,11 +240,16 @@ async function runExplanation() {
   }
 
   if (!question && !page.title && !page.selectedText && !page.articleText) {
-    renderStatus("Enter a business question, event, or page context first.", "error");
+    renderStatus("Enter a question, event, or page context first.", "error");
     return;
   }
 
-  renderStatus("Building explanation paths from the page context...", "loading");
+  renderStatus(
+    track === "research"
+      ? "Finding relevant research papers..."
+      : "Building explanation paths from the page context...",
+    "loading"
+  );
   clearResults();
   clearDatasets();
   lastAnalysisSource = null;
@@ -237,13 +257,17 @@ async function runExplanation() {
   leadEvidenceResults = new Map();
 
   try {
-    const response = await fetch("/api/explain-page", {
+    const endpoint = track === "research" ? "/api/research-evidence" : "/api/explain-page";
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         page,
         userQuestion: question,
-        options: { maxExplanations: 2 }
+        options:
+          track === "research"
+            ? { maxPapers: 3, domainHint: "psychology_neuroscience" }
+            : { maxExplanations: 2 }
       })
     });
 
@@ -252,19 +276,38 @@ async function runExplanation() {
       throw new Error(result.error || "Explanation request failed.");
     }
 
-    renderExplainDebug(result);
+    if (track === "research") {
+      renderResearchDebug(result);
+    } else {
+      renderExplainDebug(result);
+    }
 
     if (result.status !== "ok") {
-      renderStatus(result.message || "This page does not yet provide enough signal for a strong explanation.", "error");
+      renderStatus(
+        result.message ||
+          (track === "research"
+            ? "This page does not yet provide enough signal for a strong research summary."
+            : "This page does not yet provide enough signal for a strong explanation."),
+        "error"
+      );
       if (result.case) {
-        renderExplanationSummary(result.case);
+        if (track === "research") {
+          renderResearchSummary(result.case);
+        } else {
+          renderExplanationSummary(result.case);
+        }
       }
       return;
     }
 
-    renderStatus("Explanation paths ready.", "success");
-    renderExplanationSummary(result.case);
-    renderExplanationCase(result.case);
+    renderStatus(track === "research" ? "Research evidence ready." : "Explanation paths ready.", "success");
+    if (track === "research") {
+      renderResearchSummary(result.case);
+      renderResearchCase(result.case);
+    } else {
+      renderExplanationSummary(result.case);
+      renderExplanationCase(result.case);
+    }
   } catch (error) {
     renderStatus(error.message || "Explanation request failed.", "error");
   }
@@ -420,6 +463,167 @@ function renderExplanationSummary(explanationCase) {
       </div>
     </details>
   `;
+}
+
+function renderResearchSummary(researchCase) {
+  summaryEl.classList.remove("hidden");
+  comparisonEl.classList.add("hidden");
+  comparisonEl.innerHTML = "";
+  datasetsEl.classList.add("hidden");
+  datasetsEl.innerHTML = "";
+
+  summaryEl.innerHTML = `
+    <div class="comparison-header">
+      <div>
+        <p class="eyebrow">Research evidence view</p>
+        <h2>Question and evidence synthesis</h2>
+        <p class="muted">These papers are ranked by question relevance first, then by evidence strength, source credibility, and influence.</p>
+      </div>
+    </div>
+    <details class="support-panel" open>
+      <summary>Question and context</summary>
+      <div class="support-body">
+        <div class="summary-grid">
+          <div>
+            <p class="eyebrow">Inferred question</p>
+            <h3>${escapeHtml(researchCase.inferredQuestions?.primary?.text || researchCase.question?.normalized || "No question available")}</h3>
+            <p class="muted">${escapeHtml(researchCase.question?.domain || "unknown domain")}</p>
+          </div>
+          <div>
+            <p class="eyebrow">What the page seems to claim</p>
+            <p>${escapeHtml(researchCase.reading?.mainClaim || researchCase.context?.anchor || "No page anchor available.")}</p>
+          </div>
+          <div>
+            <p class="eyebrow">Top-line answer</p>
+            <p>${escapeHtml(researchCase.synthesis?.shortAnswer || "No synthesis available.")}</p>
+          </div>
+        </div>
+      </div>
+    </details>
+    <details class="support-panel">
+      <summary>Inferred questions and reading notes</summary>
+      <div class="support-body">
+        <div class="lead-details">
+          <div>
+            <dt>Primary inferred question</dt>
+            <dd>${escapeHtml(researchCase.inferredQuestions?.primary?.rationale || "No rationale available.")}</dd>
+          </div>
+          <div>
+            <dt>Alternative questions</dt>
+            <dd>${renderBulletList(
+              (researchCase.inferredQuestions?.alternatives || []).map(
+                (item) => `${item.text} — ${item.rationale}`
+              )
+            )}</dd>
+          </div>
+          <div>
+            <dt>Confidence flags in the page</dt>
+            <dd>${renderBulletList(researchCase.reading?.confidenceFlags || [])}</dd>
+          </div>
+          <div>
+            <dt>Missing support</dt>
+            <dd>${renderBulletList(researchCase.reading?.missingSupport || [])}</dd>
+          </div>
+        </div>
+      </div>
+    </details>
+    <details class="support-panel">
+      <summary>What the evidence suggests</summary>
+      <div class="support-body">
+        <div class="lead-details">
+          <div>
+            <dt>Explanation</dt>
+            <dd>${renderBulletList(researchCase.synthesis?.explanation || [])}</dd>
+          </div>
+          <div>
+            <dt>What supports it</dt>
+            <dd>${renderBulletList(researchCase.synthesis?.whatSupportsIt || [])}</dd>
+          </div>
+          <div>
+            <dt>What is uncertain</dt>
+            <dd>${renderBulletList(researchCase.synthesis?.whatIsUncertain || [])}</dd>
+          </div>
+          <div>
+            <dt>How it relates to the page</dt>
+            <dd>${renderBulletList(researchCase.synthesis?.howItRelatesToThePage || [])}</dd>
+          </div>
+        </div>
+      </div>
+    </details>
+  `;
+}
+
+function renderResearchCase(researchCase) {
+  leadsEl.classList.remove("hidden");
+  leadsEl.innerHTML = `
+    <div class="panel leads-header">
+      <div class="comparison-header">
+        <div>
+          <p class="eyebrow">Relevant research</p>
+          <h2>Most relevant papers for this question</h2>
+          <p class="muted">These are ranked by question relevance first. Citation count and institutional signals help, but they do not override study quality.</p>
+        </div>
+      </div>
+    </div>
+    <div class="lead-grid"></div>
+  `;
+
+  const grid = leadsEl.querySelector(".lead-grid");
+  const papers = researchCase.evidence || [];
+
+  if (!papers.length) {
+    grid.innerHTML = `
+      <article class="panel lead-card">
+        <h3>No papers to show yet</h3>
+        <p class="muted">The current query did not produce a strong enough paper shortlist.</p>
+      </article>
+    `;
+    return;
+  }
+
+  for (const [index, paper] of papers.entries()) {
+    const fragment = document.querySelector("#paper-template").content.cloneNode(true);
+    fragment.querySelector(".rank").textContent = `#${index + 1}`;
+    fragment.querySelector(".triage-label").textContent = paper.scores?.overall >= 75 ? "High fit" : "Useful but limited";
+    fragment
+      .querySelector(".triage-label")
+      .classList.add(paper.scores?.overall >= 75 ? "triage-good" : "triage-caution");
+    fragment.querySelector(".headline").textContent = paper.title;
+    fragment.querySelector(".triage-rationale").textContent =
+      paper.relevance?.whyRelevant || "No relevance note available.";
+    fragment.querySelector(".paper-why-relevant").textContent = paper.summary || "No summary available.";
+    fragment.querySelector(".paper-summary").textContent = paper.summary || "No abstract-level summary available.";
+    fragment.querySelector(".paper-study-type").textContent =
+      `${humanizeValue(paper.strength?.studyType || "paper")} · ${paper.strength?.population || "Population unclear"}`;
+    fragment.querySelector(".paper-credibility-inline").textContent =
+      paper.credibility?.signals?.[0] || "No source-credibility signal available.";
+    fragment.querySelector(".paper-top-caution").textContent =
+      paper.strength?.limitations?.[0] || "This first slice still needs a full-paper check.";
+    fragment.querySelector(".paper-score").textContent = `Rank score ${paper.scores?.overall || 0}`;
+    fragment.querySelector(".paper-citation-count").textContent =
+      `${paper.influence?.citationCount || 0} citations · ${paper.journal || "Unknown source"}`;
+    fragment.querySelector(".paper-question-fit").textContent =
+      paper.whyRelevant || "No explicit question-fit explanation available.";
+    fragment.querySelector(".paper-authors").innerHTML = renderBulletList([
+      `Authors: ${(paper.authors || []).join(", ") || "Unknown"}`,
+      `Institutions: ${(paper.institutions || []).map((item) => item.name).join(", ") || "Unknown"}`
+    ]);
+    fragment.querySelector(".paper-confidence").innerHTML = renderBulletList(paper.confidenceNotes || []);
+    fragment.querySelector(".paper-limitations").innerHTML = renderBulletList(paper.strength?.limitations || []);
+    fragment.querySelector(".paper-credibility").innerHTML = renderBulletList([
+      ...(paper.credibility?.signals || []),
+      `Evidence strength score: ${paper.strength?.score || 0}`,
+      `Source credibility score: ${paper.credibility?.score || 0}`
+    ]);
+    fragment.querySelector(".paper-claims").innerHTML = renderBulletList(paper.extractedClaims || []);
+    const link = fragment.querySelector(".paper-link");
+    link.href = paper.link || "#";
+    if (!paper.link) {
+      link.classList.add("button-disabled");
+      link.removeAttribute("href");
+    }
+    grid.appendChild(fragment);
+  }
 }
 
 function renderExplanationCase(explanationCase) {
@@ -916,6 +1120,7 @@ function clearResults() {
   developerDebugEl.innerHTML = "";
   developerDebugState = {
     explain: null,
+    research: null,
     upload: null,
     search: null,
     hypothesis: null
@@ -980,6 +1185,21 @@ function renderExplainDebug(result) {
   renderDeveloperPanel();
 }
 
+function renderResearchDebug(result) {
+  const debug = result?.debug || {};
+  developerDebugState.research = {
+    status: result?.status || "unknown",
+    domain: debug.domain || "unknown",
+    concepts: debug.concepts || [],
+    inferredQuestions: debug.inferredQuestions || null,
+    sourcesQueried: debug.sourcesQueried || [],
+    searchQuery: debug.searchQuery || "",
+    rawResultCount: debug.rawResultCount || 0,
+    rankedEvidenceCount: debug.rankedEvidenceCount || 0
+  };
+  renderDeveloperPanel();
+}
+
 function formatQualitySignals(signals) {
   const parts = [];
 
@@ -1040,7 +1260,7 @@ function applyBadgeTone(element, value) {
 function renderBulletList(items = []) {
   const cleanItems = items.filter(Boolean);
   if (!cleanItems.length) {
-    return `<p class="muted">Use the dataset dictionary, a matched denominator source, and a second public dataset before advancing.</p>`;
+    return `<p class="muted">No additional detail available yet.</p>`;
   }
 
   return `<ul class="guidance-list">${cleanItems.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
@@ -1525,6 +1745,48 @@ function renderDeveloperPanel() {
     `);
   }
 
+  if (developerDebugState.research) {
+    sections.push(`
+      <section class="developer-section">
+        <h3>Research-evidence flow</h3>
+        <dl class="dataset-details">
+          <div>
+            <dt>Status</dt>
+            <dd>${escapeHtml(developerDebugState.research.status)}</dd>
+          </div>
+          <div>
+            <dt>Domain</dt>
+            <dd>${escapeHtml(developerDebugState.research.domain)}</dd>
+          </div>
+          <div>
+            <dt>Concepts</dt>
+            <dd>${escapeHtml(JSON.stringify(developerDebugState.research.concepts || []))}</dd>
+          </div>
+          <div>
+            <dt>Inferred questions</dt>
+            <dd>${escapeHtml(JSON.stringify(developerDebugState.research.inferredQuestions || null))}</dd>
+          </div>
+          <div>
+            <dt>Sources queried</dt>
+            <dd>${escapeHtml(JSON.stringify(developerDebugState.research.sourcesQueried || []))}</dd>
+          </div>
+          <div>
+            <dt>Search query</dt>
+            <dd>${escapeHtml(developerDebugState.research.searchQuery || "")}</dd>
+          </div>
+          <div>
+            <dt>Raw result count</dt>
+            <dd>${escapeHtml(String(developerDebugState.research.rawResultCount || 0))}</dd>
+          </div>
+          <div>
+            <dt>Ranked evidence count</dt>
+            <dd>${escapeHtml(String(developerDebugState.research.rankedEvidenceCount || 0))}</dd>
+          </div>
+        </dl>
+      </section>
+    `);
+  }
+
   if (developerDebugState.hypothesis) {
     sections.push(`
       <section class="developer-section">
@@ -1618,6 +1880,12 @@ function renderDeveloperPanel() {
 function capitalize(value) {
   const text = String(value || "");
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
+}
+
+function humanizeValue(value) {
+  return String(value || "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function escapeHtml(value) {

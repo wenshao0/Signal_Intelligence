@@ -150,6 +150,16 @@ input {
   font-size: 0.98rem;
 }
 
+.field select {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-strong);
+  font-size: 0.98rem;
+  color: var(--text);
+}
+
 .field textarea {
   width: 100%;
   padding: 0.85rem 1rem;
@@ -626,6 +636,11 @@ thead th {
 
 .explanation-card .lead-priority-summary {
   max-width: 100%;
+}
+
+.paper-card .headline {
+  font-size: 1.1rem;
+  line-height: 1.35;
 }
 
 .lead-scan {

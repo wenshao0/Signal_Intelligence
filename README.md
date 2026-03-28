@@ -1,6 +1,9 @@
 # Signal Desk
 
-Signal Desk is now a question-first business-reporting prototype for an internal newsroom tool. It starts from a concrete event or question, then uses page context and optional structured business tables as supporting evidence. Dataset discovery, ingestion, and review remain available, but they are no longer the main visible path for generating meaning.
+Signal Desk is now a question-first prototype that starts from a concrete event or question, then uses focused evidence to help explain what the user is reading. It currently has two narrow paths:
+
+- a business explanation path using page context plus optional structured business tables
+- a research-evidence path using page context plus relevant papers for psychology, neuroscience, and behavioral questions
 
 This version is intentionally narrow:
 
@@ -8,6 +11,7 @@ This version is intentionally narrow:
 - It accepts either structured CSV uploads or a small supported set of public structured datasets.
 - It now has a primary `Explain question/event` flow that assembles 1 to 2 explanation paths instead of mining standalone hypotheses from arbitrary data.
 - It reuses structured data only when it helps support or challenge a question-first explanation.
+- It now also includes a first research-paper slice that ranks a small set of relevant papers for psychology / neuroscience questions.
 - It keeps dataset credibility, evidence summaries, and caution layers as supporting material.
 - It generates reporting explanations, not full stories.
 - It avoids causal claims and frames findings as leads that still require reporting.
@@ -19,6 +23,8 @@ This version is intentionally narrow:
 - A shared analysis module in `src/analysis/`
 - Question-first orchestration modules in `src/questions/`
 - Structured evidence helpers in `src/evidence/`
+- Core understanding-case modules in `src/core/`
+- Research retrieval helpers in `src/research/`
 - Dataset discovery and ingestion modules in `src/datasets/`
 - A dataset review layer in `src/datasets/review.mjs`
 - A reporting validation planner and explanation assembler in `src/reporting/`
@@ -43,10 +49,21 @@ This keeps version 1 pragmatic: easy to run, easy to inspect, and easy to replac
 │   │   └── review.mjs
 │   ├── evidence/
 │   │   └── structured-signal-extractor.mjs
+│   ├── core/
+│   │   ├── case-model.mjs
+│   │   ├── context-builder.mjs
+│   │   ├── evidence-ranker.mjs
+│   │   ├── guardrails.mjs
+│   │   ├── question-parser.mjs
+│   │   └── synthesizer.mjs
 │   ├── questions/
 │   │   ├── anchor-extractor.mjs
 │   │   ├── mechanism-router.mjs
 │   │   └── tension-detector.mjs
+│   ├── research/
+│   │   ├── paper-normalizer.mjs
+│   │   ├── query-builder.mjs
+│   │   └── source-openalex.mjs
 │   ├── analysis/
 │   │   └── disparity-analyzer.mjs
 │   └── reporting/
@@ -82,6 +99,20 @@ The question-first analysis pipeline:
   - supporting tables and method notes as secondary layers
 
 The older dataset-first flows still work, but they are now secondary to the explanation path.
+
+The first research-evidence pipeline:
+
+- Parses the question from the user and page context
+- Builds a narrow research query
+- Queries OpenAlex for relevant papers
+- Normalizes citation, institution, journal, and abstract metadata into a shared evidence shape
+- Ranks papers by relevance first, then evidence strength, source credibility, influence, and accessibility
+- Produces a small research brief with:
+  - the most relevant papers
+  - why each paper is relevant
+  - source credibility signals
+  - study-type and population notes
+  - limitations and uncertainty
 
 ## Sample dataset
 
@@ -182,10 +213,11 @@ Then open [http://localhost:3000](http://localhost:3000).
 ## Usage
 
 1. Use `Explain question/event` for the primary workflow.
-2. Enter a business question or event, paste page text, and optionally add one structured business table as CSV.
-3. Review the 1 to 2 explanation cards first.
-4. Open supporting layers to inspect tensions, timeline hints, and structured evidence.
-5. Use `Upload CSV` or `Find public datasets` only when you want to inspect a dataset directly.
+2. Choose either `Business explanation` or `Research evidence`.
+3. Paste page text or a selected passage. The question field is now optional in the research path: the tool will infer a primary question from the reading material and only use the field as an override or refinement.
+4. Review either the explanation cards or the ranked paper cards first.
+5. Open supporting layers to inspect tensions, timeline hints, synthesis, and evidence basis.
+6. Use `Upload CSV` or `Find public datasets` only when you want to inspect a dataset directly.
 
 ## Smallest architecture change
 

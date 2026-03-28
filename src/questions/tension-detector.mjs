@@ -4,6 +4,9 @@ const IMPACT_UNCLEAR_PATTERNS =
   /(no financial terms|no revenue impact|financial impact (is )?unclear|did not disclose financial terms|not expected to be material|too early to tell)/i;
 const PEER_PATTERNS = /(peer|competitor|sector|industry|benchmark|relative to others|relative to peers)/i;
 const FINANCIAL_STRESS_PATTERNS = /(cash|liquidity|debt|leverage|coverage|margin|burn|working capital)/i;
+const CLAIM_PATTERNS = /(study|research|scientists|evidence|paper|brain|behavior|behaviour|psycholog|neurosci)/i;
+const INTUITION_PATTERNS = /(everyone knows|obvious|clearly|always|never|common sense|people say)/i;
+const LIMITATION_PATTERNS = /(small sample|mice|rats|college students|correlation|correlational|self-report|pilot study|preliminary)/i;
 
 export function detectTensions({ page = {}, anchorEvent = null, structuredSignals = [] } = {}) {
   const text = [page.title, page.selectedText, page.articleText].filter(Boolean).join(" ");
@@ -37,8 +40,16 @@ export function detectTensions({ page = {}, anchorEvent = null, structuredSignal
     tensions.push("The page implies a peer comparison, but it is not yet clear what company-specific factor explains the gap.");
   }
 
+  if (CLAIM_PATTERNS.test(text) && INTUITION_PATTERNS.test(text)) {
+    tensions.push("The page mixes intuitive claims with research-style language, so it is not yet clear what the actual evidence base is.");
+  }
+
+  if (CLAIM_PATTERNS.test(text) && LIMITATION_PATTERNS.test(text)) {
+    tensions.push("The page gestures toward evidence, but the likely study limits may narrow how far the claim can travel.");
+  }
+
   if (!tensions.length && anchorEvent) {
-    tensions.push("There is a concrete business event here, but the path from the event to operating or market impact still needs explanation.");
+    tensions.push("There is a concrete anchor here, but the path from the visible claim or event to a solid explanation still needs evidence.");
   }
 
   return [...new Set(tensions)].slice(0, 4);

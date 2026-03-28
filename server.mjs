@@ -13,6 +13,17 @@ import { detectTensions } from "./src/questions/tension-detector.mjs";
 import { routeMechanisms } from "./src/questions/mechanism-router.mjs";
 import { extractStructuredSignals } from "./src/evidence/structured-signal-extractor.mjs";
 import { assembleExplanationCase } from "./src/reporting/explanation-assembler.mjs";
+import { parseQuestion } from "./src/core/question-parser.mjs";
+import { buildContext } from "./src/core/context-builder.mjs";
+import { rankEvidenceItems } from "./src/core/evidence-ranker.mjs";
+import { assessEvidenceSufficiency } from "./src/core/guardrails.mjs";
+import { synthesizeEvidenceCase } from "./src/core/synthesizer.mjs";
+import { createUnderstandingCase } from "./src/core/case-model.mjs";
+import { extractClaimContext } from "./src/core/claim-extractor.mjs";
+import { inferQuestions } from "./src/core/question-inference.mjs";
+import { buildResearchQuery } from "./src/research/query-builder.mjs";
+import { searchOpenAlexWorks } from "./src/research/source-openalex.mjs";
+import { normalizeOpenAlexWorks } from "./src/research/paper-normalizer.mjs";
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || "127.0.0.1";
@@ -21,6 +32,8 @@ const SAMPLE_PATH = join(process.cwd(), "data", "sample-company-peer-metrics.csv
 const MAX_BODY_SIZE = 2 * 1024 * 1024;
 const BUSINESS_CONTEXT_PATTERNS =
   /(company|shares?|stock|earnings|revenue|margin|cash|debt|guidance|forecast|analyst|sector|industry|peer|partner|partnership|product|market|valuation|multiple|strategy|customer|pricing|demand)/i;
+const RESEARCH_CONTEXT_PATTERNS =
+  /(psycholog|neurosci|brain|behavior|behaviour|emotion|stress|anxiety|motivation|habit|sleep|attention|memory|decision|learning|mental health|therapy|social|cognition)/i;
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -217,6 +230,105 @@ const server = createServer(async (req, res) => {
     }
   }
 
+  if (req.method === "POST" && url.pathname === "/api/research-evidence") {
+    try {
+      const body = await readJsonBody(req);
+      const page = normalizePageContext(body.page || {});
+      const userQuestion = typeof body.userQuestion === "string" ? body.userQuestion : "";
+      const domainHint = typeof body.options?.domainHint === "string" ? body.options.domainHint : "";
+      const maxPapers = normalizeMaxPapers(body.options?.maxPapers);
+      const reading = extractClaimContext({ page, userQuestion });
+      const inferredQuestions = inferQuestions({ page, userQuestion, claimContext: reading });
+      const primaryQuestionText = inferredQuestions.primary?.text || "";
+      const question = parseQuestion({ page, userQuestion: primaryQuestionText, domainHint });
+      const context = buildContext({ page, userQuestion: primaryQuestionText });
+
+      if (!question.normalized || !inferredQuestions.primary) {
+        return sendJson(res, 200, {
+          status: "needs_question",
+          message: "Paste a clearer passage or page so the tool can infer a research question from it.",
+          debug: {
+            domain: question.domain,
+            concepts: question.concepts,
+            inferredQuestions,
+            sourcesQueried: []
+          }
+        });
+      }
+
+      if (question.domain !== "psychology_neuroscience" && !RESEARCH_CONTEXT_PATTERNS.test([page.title, page.selectedText, page.articleText, userQuestion].join(" "))) {
+        return sendJson(res, 200, {
+          status: "unsupported_input",
+          message:
+            "This first research slice is intentionally narrow: it works best for psychology, neuroscience, and behavioral questions.",
+          debug: {
+            domain: question.domain,
+            concepts: question.concepts,
+            inferredQuestions,
+            sourcesQueried: []
+          }
+        });
+      }
+
+      const queryPlan = buildResearchQuery({ question, page });
+      const openAlexWorks = await searchOpenAlexWorks({
+        searchQuery: queryPlan.searchQuery,
+        perPage: Math.max(6, maxPapers * 2)
+      });
+      const evidence = rankEvidenceItems(
+        normalizeOpenAlexWorks({
+          works: openAlexWorks,
+          question,
+          context
+        })
+      ).slice(0, maxPapers);
+      const sufficiency = assessEvidenceSufficiency(evidence);
+      const synthesis = synthesizeEvidenceCase({
+        question,
+        context,
+        evidence
+      });
+      const understandingCase = createUnderstandingCase({
+        input: {
+          pageUrl: page.url,
+          pageTitle: page.title,
+          selectedText: page.selectedText,
+          pageText: page.articleText,
+          userQuestion
+        },
+        reading,
+        inferredQuestions,
+        question,
+        context,
+        evidence,
+        synthesis,
+        nextSteps: buildResearchNextSteps(evidence),
+        metadata: {
+          status: sufficiency.status,
+          sourceTypesUsed: ["paper", "openalex"]
+        }
+      });
+
+      return sendJson(res, 200, {
+        status: sufficiency.status === "ok" ? "ok" : sufficiency.status,
+        message: sufficiency.message || "",
+        case: understandingCase,
+        debug: {
+          domain: question.domain,
+          concepts: question.concepts,
+          inferredQuestions,
+          sourcesQueried: queryPlan.sourcesQueried,
+          searchQuery: queryPlan.searchQuery,
+          rawResultCount: openAlexWorks.length,
+          rankedEvidenceCount: evidence.length
+        }
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unexpected research evidence error.";
+      return sendJson(res, 400, { status: "error", error: message });
+    }
+  }
+
   if (req.method === "POST" && url.pathname === "/api/analyze-discovered") {
     try {
       const body = await readJsonBody(req);
@@ -387,6 +499,14 @@ function normalizeMaxExplanations(value) {
   return Math.max(1, Math.min(2, Math.round(parsed)));
 }
 
+function normalizeMaxPapers(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return 3;
+  }
+  return Math.max(1, Math.min(5, Math.round(parsed)));
+}
+
 function hasBusinessContext(page, structuredEvidence, coreQuestion = "") {
   const text = [page.title, page.selectedText, page.articleText, coreQuestion].join(" ");
   return BUSINESS_CONTEXT_PATTERNS.test(text) || structuredEvidence.tablesReviewed.some((table) => table.usable);
@@ -403,4 +523,18 @@ function buildExplainDebug({ page, anchor, initialMechanisms, structuredEvidence
     usableTableCount: structuredEvidence?.tablesReviewed?.filter((table) => table.usable).length || 0,
     structuredSignalCount: structuredEvidence?.signals?.length || 0
   };
+}
+
+function buildResearchNextSteps(evidence = []) {
+  const nextSteps = [
+    "Read the abstract and, if possible, the full paper before treating the summary as settled.",
+    "Check whether a newer review or meta-analysis exists on the same question.",
+    "Check whether the sample and population actually match the claim you care about."
+  ];
+
+  if (evidence.some((item) => item.strength?.studyType === "animal_or_preclinical")) {
+    nextSteps.push("Check for human studies before transferring the finding to real-world behavior.");
+  }
+
+  return [...new Set(nextSteps)].slice(0, 4);
 }

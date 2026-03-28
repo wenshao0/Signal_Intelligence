@@ -12,9 +12,9 @@
         <p class="eyebrow">Version 1.2 prototype</p>
         <h1>Signal Desk</h1>
         <p class="intro">
-          Start from a business event or question, then use page context and optional structured
-          tables to build a small number of explanation paths. Structured data is supporting
-          evidence here, not the default source of meaning.
+          Start from a question or event, then use page context and focused evidence to make it
+          easier to understand what you are reading. The current prototype supports business
+          explanation paths and a narrow research-evidence flow.
         </p>
       </section>
 
@@ -22,9 +22,9 @@
         <div>
           <h2>Run analysis</h2>
           <p class="muted">
-            The tool turns a concrete event or question into a small number of possible business
-            explanations, then shows what evidence supports them, what weakens them, and what still
-            needs verification.
+            The tool turns a concrete question or event into a small number of possible
+            explanations, or into a short list of relevant research papers when that is the better
+            fit.
           </p>
         </div>
 
@@ -43,11 +43,18 @@
         <section id="panel-explain" class="mode-panel">
           <form id="explain-form" class="upload-form">
             <label class="field">
-              <span>Question or event</span>
+              <span>Analysis path</span>
+              <select id="explain-track">
+                <option value="business">Business explanation</option>
+                <option value="research">Research evidence (psychology / neuroscience)</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Question or event (optional refine)</span>
               <textarea
                 id="explain-question"
                 rows="3"
-                placeholder="Why did the market react so strongly to this partnership announcement?"
+                placeholder="Leave blank to let the tool infer the main question from the page. Or refine it here."
               ></textarea>
             </label>
             <div class="two-up">
@@ -81,7 +88,8 @@
                 <p class="eyebrow">Optional structured evidence</p>
                 <p class="muted">
                   Add one business-style table if the page includes peer comparisons, quarterly
-                  metrics, or expectation-vs-actual data.
+                  metrics, or expectation-vs-actual data. The research-evidence path ignores this
+                  table field in the first slice.
                 </p>
               </div>
               <label class="field">
@@ -145,8 +153,8 @@
           <strong>Guardrails</strong>
           <ul>
             <li>Start from a real question or event whenever possible</li>
-            <li>Structured business tables are supporting evidence, not the default driver</li>
-            <li>Outputs are explanation paths for reporting, not conclusions</li>
+            <li>Structured tables are supporting evidence, not the default driver</li>
+            <li>Outputs are explanation paths or research evidence summaries, not conclusions</li>
           </ul>
         </div>
       </section>
@@ -368,6 +376,76 @@
                 <dd class="explanation-supporting-tables"></dd>
               </div>
             </dl>
+          </div>
+        </details>
+      </article>
+    </template>
+
+    <template id="paper-template">
+      <article class="panel lead-card paper-card">
+        <div class="lead-topline">
+          <span class="rank"></span>
+          <span class="triage-label"></span>
+        </div>
+        <h3 class="headline"></h3>
+        <p class="triage-rationale"></p>
+        <p class="hypothesis-statement paper-why-relevant"></p>
+        <div class="lead-scan">
+          <div>
+            <dt>What it found</dt>
+            <dd class="paper-summary"></dd>
+          </div>
+          <div>
+            <dt>Study type</dt>
+            <dd class="paper-study-type"></dd>
+          </div>
+          <div>
+            <dt>Source credibility</dt>
+            <dd class="paper-credibility-inline"></dd>
+          </div>
+          <div>
+            <dt>Top caution</dt>
+            <dd class="lead-caution-inline paper-top-caution"></dd>
+          </div>
+        </div>
+        <div class="lead-meta-row">
+          <span class="score paper-score"></span>
+          <span class="lead-priority-summary paper-citation-count"></span>
+        </div>
+        <details class="lead-expand">
+          <summary>Full paper note</summary>
+          <div class="lead-expanded">
+            <section class="hypothesis-bundle">
+              <div class="evidence-block">
+                <p class="eyebrow">Why this paper is here</p>
+                <h4 class="paper-question-fit"></h4>
+              </div>
+              <div class="evidence-block">
+                <h4>Authors and institutions</h4>
+                <dd class="paper-authors"></dd>
+              </div>
+              <div class="evidence-block">
+                <h4>Confidence notes</h4>
+                <dd class="paper-confidence"></dd>
+              </div>
+            </section>
+            <section class="evidence-chain">
+              <div class="evidence-block">
+                <h4>Main limitations</h4>
+                <dd class="paper-limitations"></dd>
+              </div>
+              <div class="evidence-block">
+                <h4>Source and influence signals</h4>
+                <dd class="paper-credibility"></dd>
+              </div>
+              <div class="evidence-block">
+                <h4>Extracted claims</h4>
+                <dd class="paper-claims"></dd>
+              </div>
+            </section>
+            <div class="dataset-actions">
+              <a class="button button-secondary paper-link" target="_blank" rel="noreferrer">Open paper</a>
+            </div>
           </div>
         </details>
       </article>
